@@ -14,7 +14,7 @@ const passport = require("passport");
 const User = require("./models/User");
 const LocalStrategy = require("passport-local").Strategy;
 const flash = require("connect-flash");
-
+const SlackStrategy = require('passport-slack').Strategy;
 
 
 
@@ -87,6 +87,34 @@ passport.use(new LocalStrategy(
   });
 }));
 
+//NEW
+passport.use(new SlackStrategy({
+  clientID: "your Slack client id here",
+  clientSecret: "your Slack client secret here"
+}, (accessToken, refreshToken, profile, done) => {
+  User.findOne({ slackID: profile.id })
+  .then(user => {
+    if (err) {
+      return done(err);
+    }
+    if (user) {
+      return done(null, user);
+    }
+
+    const newUser = new User({
+      slackID: profile.id
+    });
+
+    newUser.save()
+    .then(user => {
+      done(null, newUser);
+    })
+  })
+  .catch(error => {
+    next(error)
+  })
+
+}));
 
 // default value for title local
 app.locals.title = 'Express - Generated with IronGenerator';
